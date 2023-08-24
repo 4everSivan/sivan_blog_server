@@ -1,0 +1,24 @@
+package com.sivan.blog.control.pojo;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import lombok.Data;
+
+/**
+ * @author Sivan
+ * @version 1.0
+ * @date 2022/3/11 15:11
+ */
+
+@Data
+public class Permission {
+
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    private String name;
+
+    private String path;
+
+    private String description;
+}

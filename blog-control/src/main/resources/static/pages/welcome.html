@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>博客管理后台</title>
+    <meta name="description" content="博客管理后台">
+    <meta name="keywords" content="博客管理后台">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+
+
+    <!-- Theme included stylesheets -->
+    <link href="../plugins/quill/quill.snow.css" rel="stylesheet">
+    <link href="../plugins/quill/quill.bubble.css" rel="stylesheet">
+
+    <!-- Core build with no theme, formatting, non-essential modules -->
+    <link href="../plugins/quill/quill.core.css" rel="stylesheet">
+    <!-- Main Quill library -->
+    <script src="../plugins/quill/quill.js"></script>
+    <!--        <script src="../plugins/quill/quill.core.js"></script>-->
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="welcome-header">
+            <el-row>
+                <el-col>
+                    <h1 class="welcome-header-title">欢迎您，{{user.username}}</h1>
+                </el-col>
+                    <h1 class="welcome-header-weather">
+                        <i class="fa" :class="icon"></i>
+                            {{weather.city}} {{weather.wea}}&nbsp;&nbsp;{{weather.tem_day}}°C {{weather.win}}{{weather.win_speed}}
+                    </h1>
+            </el-row>
+            <el-card class="welcome">
+                <el-card class="welcome-TodoList">
+                    <h1><small>待办事项</small></h1>
+                    <!--添加栏-->
+                    <el-input placeholder="添加待办" class="input-with-select" v-model="append">
+                        <el-button slot="append" @click="addTableData(append)" icon="el-icon-plus"></el-button>
+                    </el-input>
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%;margin-top: 10px">
+                        <el-table-column
+                                type="selection">
+                        </el-table-column>
+                        <el-table-column
+                                prop="transaction"
+                                label="任务">
+                        </el-table-column>
+                        <el-table-column
+                                prop="tag"
+                                label="状态"
+                                width="100">
+                            <template slot-scope="scope">
+                                <el-tag
+                                        :type="scope.row.tag === '完成' ? 'success' : 'warning'"
+                                        disable-transitions>{{scope.row.tag}}</el-tag>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-card>
+
+                <el-card class="welcome-articleCount">
+                    <h1><small>统 计</small></h1>
+                    <el-row>
+                        <el-col class="welcome-articleCount-card">
+                            <el-card :body-style="{ padding: '0px' }">
+                                <img src="../img/book.png" class="image">
+                            </el-card>
+                        </el-col>
+                        <div class="welcome-articleCount-div">
+                            <span>文章量:{{statistical.countArticle}}</span>
+                        </div>
+                    </el-row>
+                    <el-row>
+                        <el-col class="welcome-articleCount-card">
+                            <el-card :body-style="{ padding: '0px' }">
+                                <img src="../img/comment.png" class="image">
+                            </el-card>
+                        </el-col>
+                        <div class="welcome-articleCount-div">
+                            <span>留言数:{{statistical.countMessage}}</span>
+                        </div>
+                    </el-row>
+                    <el-row>
+                        <el-col class="welcome-articleCount-card">
+                            <el-card :body-style="{ padding: '0px' }">
+                                <img src="../img/camera.png" class="image">
+                            </el-card>
+                        </el-col>
+                        <div class="welcome-articleCount-div">
+                            <span>访问量:{{statistical.countView}}</span>
+                        </div>
+                    </el-row>
+                </el-card>
+
+            </el-card>
+    </div>
+</div>
+</body>
+<!-- 引入组件库 -->
+<script src="../js/vue.js"></script>
+<script src="../plugins/elementui/index.js"></script>
+<script type="text/javascript" src="../js/jquery.min.js"></script>
+<script src="../js/axios-0.18.0.js"></script>
+<script src="../plugins/quill/vue-quill-editor.js"></script>
+<script>
+
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            icon:'fa-cloud',
+            user:[],
+            statistical:[],
+            weather:{},
+            tableData:[
+                {
+                    transaction: '早上十点晨会',
+                    tag:'完成'
+                },
+                {
+                    transaction: '下午四点前对数据库进行维护',
+                    tag:'未完成'
+                },
+                {
+                    transaction: '对上个月的文章进行总结修改',
+                    tag:'未完成'
+                }
+            ],
+            append:'',
+        },
+        methods:{
+            addTableData(){
+                let dataList = {
+                    transaction:this.append,
+                    tag:'未完成',
+                };
+                this.tableData.unshift(dataList)
+            },
+            getWeather(){
+                axios.get("https://yiketianqi.com/free/day?appid=99727835&appsecret=yer4WUFJ&unescape=1").then((res)=>{
+                    this.weather = res.data;
+                })
+            },
+
+            getUserInfo(){
+                axios.post("/adminUser/user/userInfo").then((res)=>{
+                    this.user = res.data.data;
+                })
+            },
+            findStatistical(){
+                axios.post("/welcome/statistical").then((res)=>{
+                    this.statistical = res.data.data;
+                })
+            },
+        },
+        created() {
+            this.getWeather();
+            this.getUserInfo();
+            this.findStatistical();
+        },
+    });
+
+</script>
+<style>
+    h1{
+        font-size: 24px;
+        font-weight: normal;
+    }
+    small{
+        border-bottom: 3px solid #3c8dbc;
+    }
+    .welcome-header {
+        margin: 10px;
+    }
+    .welcome-header-title {
+        border-radius: 5px;
+        width: 15%;
+        /*color: white;*/
+        /*background-color: #3cba92;*/
+        padding: 3px;
+        /*text-align: center;*/
+    }
+    .welcome-header-weather {
+        position: absolute;
+        z-index: 2;
+        margin-left: 71%;
+        border-radius: 5px;
+        width: 28%;
+        /*color: white;*/
+        /*background-color: #3cba92;*/
+        padding: 3px;
+        /*text-align: center;*/
+    }
+    .welcome {
+        padding-bottom: 20px;
+        border-top: #3c8dbc 3px solid !important;
+        border-radius: 3px;
+    }
+    .welcome-TodoList {
+        width: 57%;
+        float: left;
+    }
+    .welcome-articleCount {
+        float: left;
+        width: 38%;
+        height: 100%    ;
+        margin-left: 20px;
+    }
+    .welcome-articleCount-card {
+
+        width: 100%;
+        float: left;
+        padding: 0 14px 0;
+        margin-bottom: 18px;
+
+    }
+    .welcome-articleCount-div {
+        position: absolute;
+        z-index: 0;
+        padding: 28px;
+        margin-left: 68%;
+        font-size: 15px;
+    }
+    img {
+        float: left;
+        height: 70px;
+    }
+
+</style>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- 页面meta -->
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>博客管理后台</title>
+        <meta name="description" content="博客管理后台">
+        <meta name="keywords" content="博客管理后台">
+        <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+        <!-- 引入样式 -->
+        <link rel="stylesheet" href="../plugins/elementui/index.css">
+        <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+        <link rel="stylesheet" href="../css/style.css">
+
+
+        <!-- Theme included stylesheets -->
+        <link href="../plugins/quill/quill.snow.css" rel="stylesheet">
+        <link href="../plugins/quill/quill.bubble.css" rel="stylesheet">
+
+        <!-- Core build with no theme, formatting, non-essential modules -->
+        <link href="../plugins/quill/quill.core.css" rel="stylesheet">
+        <!-- Main Quill library -->
+        <script src="../plugins/quill/quill.js"></script>
+<!--        <script src="../plugins/quill/quill.core.js"></script>-->
+    </head>
+    <body class="hold-transition">
+        <div id="app">
+            <div class="content-header">
+                <h1>网站管理<small>用户管理</small></h1>
+                <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+                    <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+                    <el-breadcrumb-item>网站管理</el-breadcrumb-item>
+                    <el-breadcrumb-item>用户管理</el-breadcrumb-item>
+                </el-breadcrumb>
+            </div>
+            <div class="app-container" style="border-top: #3c8dbc 3px solid !important;border-radius: 3px">
+                <div class="filter-container" style="margin-left: 10px">
+                    <el-input placeholder="用户名称" v-model="search" style="width: 200px;" class="filter-item"></el-input>
+                    <el-button class="dalfBut" @click="searchUser()">查询</el-button>
+                </div>
+                <el-table
+                        :data="dataList"
+                        style="width: 100%;"
+                        stripe>
+                    <el-table-column label="编号" prop="id" align="center"></el-table-column>
+                    <el-table-column label="用户名" prop="account" align="center"></el-table-column>
+                    <el-table-column label="头像" prop="avatar" align="center"></el-table-column>
+                    <el-table-column label="密码" prop="password" align="center"></el-table-column>
+                    <el-table-column
+                            label="操作" align="center">
+                        <template slot-scope="scope">
+                            <el-button
+                                    size="mini"
+                                    type="primary"
+                                    @click="handleEdit(scope.row)">编辑</el-button>
+                            <el-button
+                                    size="mini"
+                                    type="danger"
+                                    @click="handleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div class="pagination-container">
+                    <el-pagination
+                            class="pagiantion"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.currentPage"
+                            :page-size="pagination.pageSize"
+                            layout="total, prev, pager, next, jumper"
+                            :total="pagination.total">
+                    </el-pagination>
+                </div>
+                <div>
+                    <el-dialog title="编辑" :visible.sync="dialogFormVisible">
+                        <el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right" label-width="100px">
+                            <el-row>
+                                <el-col >
+                                    <el-form-item label="用户名" prop="account">
+                                        <el-input :disabled="true" v-model="formData.account"/>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row>
+                                <el-col >
+                                    <el-form-item label="密码" prop="password">
+                                        <el-input v-model="formData.password"/>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row>
+                                <el-col >
+                                    <el-form-item label="头像" prop="avatar">
+                                        <el-input v-model="formData.avatar"/>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                        </el-form>
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="dialogFormVisible = false">取消</el-button>
+                            <el-button type="primary" @click="handleAdd()">确定</el-button>
+                        </div>
+                    </el-dialog>
+                </div>
+            </div>
+        </div>
+    </body>
+    <!-- 引入组件库 -->
+    <script src="../js/vue.js"></script>
+    <script src="../plugins/elementui/index.js"></script>
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../plugins/quill/vue-quill-editor.js"></script>
+    <script>
+
+        var vue = new Vue({
+            el: '#app',
+            data: {
+                activeName: 'first',
+                search: '',
+                pagination: {//分页相关模型数据
+                    currentPage: 1,//当前页码
+                    pageSize:4,//每页显示的记录数
+                    total:0,//总记录数
+                    queryString:null//查询条件
+                },
+                dataList: [],//当前页要展示的分页列表数据
+                subjectList: [],
+                tableData: {},
+                fbChoiceList: [{
+                    content: "",
+                }],
+                formData: {
+                },//表单数据
+                dialogFormVisible: false,//增加表单是否可见
+                dialogFormVisibleEdit:false,
+                rules: {//校验规则
+                    tagName: [{ required: true, message: '必填项', trigger: 'blur' }],
+                }
+            },
+            //钩子函数，VUE对象初始化完成后自动执行
+            created() {
+                this.findPage();
+            },
+            methods: {
+                searchUser(){
+                    let params = new FormData();
+                    params.append('username',this.search);
+                    axios.post("/user/search",params).then((res) => {
+                        if (res.data.success){
+                            this.dataList = res.data.data;
+                            this.pagination.currentPage = res.data.data.length >= 4 ? res.data.data.length % 4 : 1;
+                            this.pagination.total = res.data.data.length;
+                        }else {
+                            this.$message.error("查询出错");
+                        }
+                    })
+                },
+                handleAdd(){
+                    axios.post("/user/update",this.formData).then((res) => {
+                        if (res.data.success){
+                            this.$message.success("修改成功");
+                            this.findPage();
+                            this.dialogFormVisible = false;
+                        }else{
+                            this.$message.error("修改失败");
+                            this.dialogFormVisible = false;
+                        }
+                    })
+                },
+                handleEdit(row) {
+                    this.formData = row
+                    this.dialogFormVisible = true;
+                },
+                handleDelete(row) {
+                    this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        let params = new FormData();
+                        params.append('id',row.id);
+                        axios.post("/user/delete",params).then((res) => {
+                            if (res.data.success){
+                                this.$message.success("删除成功");
+                                this.findPage();
+                            }else{
+                                this.$message.error("删除失败");
+                            }
+                        })
+                    }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消删除'
+                        });
+                    });
+                },
+                findPage() {
+                    axios.post("/user/listUser",this.pagination).then((res)=>{
+                        if (res.data.success){
+                            this.dataList = res.data.data.list;
+                            this.pagination.total = res.data.data.total;
+                        }
+                    }).catch((error)=>{
+                        if (error == "Error: Request failed with status code 403"){
+                            this.$message.error("无操作权限");
+                        }
+                    });
+                },
+                //切换页码
+                handleCurrentChange(currentPage) {
+                    this.pagination.currentPage = currentPage;
+                    this.findPage();
+                },
+            },
+        });
+    </script>
+</html>

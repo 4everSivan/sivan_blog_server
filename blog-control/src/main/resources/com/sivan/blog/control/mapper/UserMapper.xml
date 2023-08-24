@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sivan.blog.control.mapper.UserMapper">
+    <select id="searchUserByUsername" resultType="com.sivan.blog.control.pojo.SysUser">
+        select * from my_sys_user
+            <where>
+                1 = 1
+                and (account like concat('%',#{username},'%'))
+            </where>
+    </select>
+</mapper>
